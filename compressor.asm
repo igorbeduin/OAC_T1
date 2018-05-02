@@ -17,13 +17,23 @@
         la      $a0, startMessage
         li      $v0, 4    # Defines syscall to print a string
         syscall
-
+	
+	read_nameFile:
         # Read the file name string to be read
         li      $v0, 8    # Defines syscall to read a string input
         la      $a0, fileName
         li      $a1, 10   # Defines a max number of characters (bytes) in the input string. Used "dataX.txt" as standard (9 characters + null terminator)
         syscall
+        move $t1, $a0
+#       	trat_quebra_linha:
+#      		lb $t0, ($t1)
+#       		addi $t1, $t1, 1
+#       		bne $t0, '\n', trat_quebra_linha
+#        	addi $t1, $t1, -1
+#        	li $t0, '\0'
+#        	sb $t0, ($t1)      	
 
+	open_file:
         # Open file
         li      $v0, 13   # Defines syscall to open a file
         la      $a0, fileName #$a0 has already the adress of 'fileName'
@@ -35,13 +45,13 @@
         blt     $s7, 0, op_errorFinishing
 
         # Print success message
-        li      $v0, 4
         la      $a0, successMessage
+        li      $v0, 4
         syscall
 
         # Print that compression has started
-        li      $v0, 4
         la      $a0, cmpssngMessage
+        li      $v0, 4
         syscall
 
         j       readingLoop
