@@ -85,9 +85,9 @@
         
         move	$t9, $v0	# store the value of $v0 so it can be used in other syscalls
         
-        #li	$v0, 4
-        #la	$a0, buffer
-        #syscall
+        li	$v0, 4
+        la	$a0, buffer
+        syscall
         
         move 	$v0, $t9	# restore the value of $v0
      
