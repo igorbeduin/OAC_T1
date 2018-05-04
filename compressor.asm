@@ -114,11 +114,12 @@
 
     pushbackDict:
     	la	 $a3, buffer
+    	lw	 $t5, -1($a3)
         addi     $sp, $sp, -8
         sw       $s5, 0($sp)
-        sw	 $a3, 4($sp)
+        sw	 $t5, 4($sp)
         
-        lw	 $t8, 4($sp)
+        la	 $t8, 4($sp)
         li	 $v0, 4
         move	 $a0, $t8
         syscall
@@ -133,13 +134,13 @@
 	
     printDict:
     	# Print index
-    	lw	$t2, 0($sp)
+    	la	$t2, 4($sp)
     	li	$v0, 1
     	move	$a0, $t2
     	syscall
     	
     	# Print word
-    	lw	$t2, 4($sp)
+    	la	$t2, 0($sp)
     	li	$v0, 4
     	move	$a0, $t2
     	syscall

@@ -1,7 +1,7 @@
         .data
 #fout:   .asciiz "testein.txt"      # filename for output
 fout: .space 20
-buff: .space 55
+buff: .space 200
         .text
   li      $v0, 8    # Defines syscall to read a string input
         la      $a0, fout
@@ -25,13 +25,26 @@ buff: .space 55
   move $s6, $v0      # save the file descriptor 
   ###############################################################
   # Couting the number of characteres on the file
+  move $t2, $s6
+
+  counting_bytes:
+  	addi $s0, $s0, 1	
+  	lb $t1, ($t2)
+  	addi $t2, $t2, 1
+#  	addi $t0, $t0, 1		
+#  	j present_dictionary
+  	bne $t1, '\0', counting_bytes
+  	j end
+  		
+
   
+  	  	  	
   ###############################################################
   # Read to file just opened
   li $v0, 14
   move $a0, $s6
   la $a1, buff
-  li $a2, 52
+  li $a2, 150
   syscall
   
   ###############################################################
@@ -41,28 +54,51 @@ buff: .space 55
   syscall            # close file
   ###############################################################
   # Printing the file's string 
-  li $v0, 4
-  la $a0, buff
-  syscall
+  #li $v0, 4
+  #la $a0, buff
+  #syscall
+ 
+  
+ #$t0 ponteiro do arquivo
+#  la $t0, ($a0)
+
+#  present_dictionary:
+#  	lb $t1, 0($sp)
+#  	la $t3, ($sp)
+#  	beq $t2, $t1, yeap
+#  	bne $t1, 0, present_dictionary
+#  	j counting_bytes	
   
   
-  move $t0, $a0
-  addi $sp, $sp, 4
-  la $t1, 0($sp)
-  li $t1, 0
-  compressing: 		
-  	while:
+#  yeap:
+#  	addi $sp, $sp, -8
+#  	sb $t1, 0($sp)
+#	j counting_bytes
+  end:	
+	  li $v0, 1
+	  move $a0, $s0
+	  syscall
+	  
+	  li $v0, 10
+	  syscall
+	  
+#  move $t0, $a0
+#  addi $sp, $sp, -4
+#  la $t1, 0($sp)
+#  li $t1, 0
+#  compressing: 		
+#  	while:
   	   
-	    while_2:  
-		beq $t1, $t0, present
-		addi $t1, $t1, -4
-	    	bnez $t1, while_2 
-	    	jal not_present	  
-	beq $t0, $0, continue
-	addi $t0, $t0, 4
-	bnez $t0, while
-  	present:
-	
-	not_present: 
-		
-	continue:
+#	    while_2:  
+#		beq $t1, $t0, present
+#		addi $t1, $t1, -4
+#	    	bnez $t1, while_2 
+#	    	jal not_present	  
+#	beq $t0, $0, continue
+#	addi $t0, $t0, 4
+#	bnez $t0, while
+#  	present:
+#	
+#	not_present: 
+#		
+#	continue:
