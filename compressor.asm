@@ -84,7 +84,7 @@
         li      $a2, 1
         syscall
         lb   	$a3, 0($a1)		# $a3 is the argument to be used inside the other functions with the buffer adress
-        li	$s5, 0
+        #li	$s5, 0
         
         beq	$t9, 1, pushbackDict
      
@@ -101,14 +101,14 @@
         addi    $t1, $t1, -4
 
         add     $t3, $s4, $t1  # $t1 is the index of the stack
-        lb	$t5, -4($t3)
+        #lb	$t5, -4($t3)
         lb	$t4, 0($t3)
         
-        seq     $t0, $a3, $t4
-        seq 	$t6, $t0, 1
-        seq	$t7, $s5, $t5
+        #seq     $t0, $a3, $t4
+        #seq 	$t6, $t0, 1
+        #seq	$t7, $s5, $t5
         
-        beq     $t7, $t6, storeIndex
+        #beq     $t7, $t6, storeIndex
 
         bne     $t1, $s6, searchDict
         li      $t1, 0
