@@ -2,7 +2,7 @@
     startMessage:   .asciiz     "Hi!\nWelcome to LZW compressor.\nWhat file would you like to compress?\n>> "
     errorMessage:   .asciiz     "\n\nWARNING: Error while trying to open the file!\nClosing the application...\n"
     successMessage: .asciiz     "\n\nSuccess in opening the file!\n"
-    readingMessage: .asciiz 	"\n\nReading file...\n" 
+    cmpssngFinished: .asciiz 	"\n\nCompression is done!\n" 
     fileName:       .space      10 # Reserve 10 bytes to filename be stored.
     cmpssngMessage: .asciiz     "\n\nCompression started...\n\n"
     buffer:         .space      4 # Reserve 4 bytes (1 word) to be read from the file and stored in the buffer
@@ -45,23 +45,23 @@
         la      $a0, successMessage
         li      $v0, 4
         syscall
-        
-        # Print that reading file has started
-        la	$a0, readingMessage
-        li	$v0, 4
-        syscall
-     	
-     	j       readFile
 
         # Print that compression has started
         la      $a0, cmpssngMessage
         li      $v0, 4
         syscall
+        
+        j       readFile
 
     Finish:
         # Close the file
         li      $v0, 16   # Defines syscall to close a file
         move    $a0, $s7  # Sets $a0 to file descriptor
+        syscall
+        
+        # Print that compression is started
+        la      $a0, cmpssngFinished
+        li      $v0, 4
         syscall
         
         li	$t1, 0
@@ -84,11 +84,11 @@
         li      $a2, 1
         syscall
         lb   	$a3, 0($a1)		# $a3 is the argument to be used inside the other functions with the buffer adress
-        #li	$s5, 0
-        
-        beq	$t9, 1, pushbackDict
+
+        seq	$t8, $v0, 0
+        beq	$t8, 1, Finish
      
-    CallSearcher:   
+    CallSearcher:  
         li	$t1, 4
         
         bne     $v0, 0, searchDict
@@ -101,18 +101,18 @@
         addi    $t1, $t1, -4
 
         add     $t3, $s4, $t1  # $t1 is the index of the stack
-        #lb	$t5, -4($t3)
-        lb	$t4, 0($t3)
+        lb	$t4, 4($t3)
+        lb	$t5, 0($t3)
         
-        #seq     $t0, $a3, $t4
-        #seq 	$t6, $t0, 1
-        #seq	$t7, $s5, $t5
+        seq     $t0, $a3, $t4
+        seq	$t6, $s5, $t5
         
-        #beq     $t7, $t6, storeIndex
+        add	$t7, $t0, $t6
+        
+        beq     $t7, 2, storeIndex
 
         bne     $t1, $s6, searchDict
         li      $t1, 0
-        move	$s5, $zero
         j       pushbackDict
 
     pushbackDict:
@@ -121,13 +121,15 @@
         sw	 $a3, 4($sp)
         
         li	$t9, 0
+        move	$s5, $zero
         
         addi 	 $s6, $s6, -8	# Increse the stack size counter register 
-        j readFile
-
+        j 	readFile
+        
     storeIndex:
         sub	$s5, $zero, $t1      #$s5 stores the index of the stack (dict) that contains de word that I want
         li	$t9, 1
+        
         j	readFile
         
 	
@@ -152,3 +154,4 @@
     	jr 	$ra
     	
 	
+    	
