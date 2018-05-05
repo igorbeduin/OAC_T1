@@ -11,9 +11,11 @@
     main:
         # Initialize registers
         li      $t1, 0
-        li	$s5, 3
+        li	$t9, 0
+        li	$s5, 0
         li      $s6, 0    # Stores the space reserved in the stack (size)
         li      $s7, 0
+        move	$s4, $sp
 
         # Print the starting message
         la      $a0, startMessage
@@ -63,7 +65,7 @@
         syscall
         
         li	$t1, 0
-        jal 	printDict
+        #jal 	printDict
 
         li      $v0, 10   # Defines syscall to terminate the execution
         syscall
@@ -79,20 +81,15 @@
         li      $v0, 14
         move    $a0, $s7
         la      $a1, buffer
-        li      $a2, 4
+        li      $a2, 1
         syscall
-        move    $a3, $a1  	# $a3 is the argument to be used inside the other functions with the buffer adress
+        lb   	$a3, 0($a1)		# $a3 is the argument to be used inside the other functions with the buffer adress
+        li	$s5, 0
         
-        move	$t9, $v0	# store the value of $v0 so it can be used in other syscalls
-        
-        li	$v0, 4
-        la	$a0, buffer
-        syscall
-        
-        move 	$v0, $t9	# restore the value of $v0
+        beq	$t9, 1, pushbackDict
      
     CallSearcher:   
-        li	$t1, -4
+        li	$t1, 4
         
         bne     $v0, 0, searchDict
         
@@ -101,11 +98,17 @@
    
 
     searchDict:
-        addi    $t1, $t1, 4
+        addi    $t1, $t1, -4
 
-        add     $t3, $sp, $t1   # $t1 is the index of the stack
-        seq     $t0, $a3, $t3
-        beq     $t0, 1, storeIndex
+        add     $t3, $s4, $t1  # $t1 is the index of the stack
+        lb	$t5, -4($t3)
+        lb	$t4, 0($t3)
+        
+        seq     $t0, $a3, $t4
+        seq 	$t6, $t0, 1
+        seq	$t7, $s5, $t5
+        
+        beq     $t7, $t6, storeIndex
 
         bne     $t1, $s6, searchDict
         li      $t1, 0
@@ -113,23 +116,19 @@
         j       pushbackDict
 
     pushbackDict:
-    	la	 $a3, buffer
-    	lw	 $t5, -1($a3)
         addi     $sp, $sp, -8
-        sw       $s5, 0($sp)
-        sw	 $t5, 4($sp)
+        sw	 $s5, 0($sp)
+        sw	 $a3, 4($sp)
         
-        la	 $t8, 4($sp)
-        li	 $v0, 4
-        move	 $a0, $t8
-        syscall
+        li	$t9, 0
         
-        addi 	 $s6, $s6, 8	# Increse the stack size counter register 
+        addi 	 $s6, $s6, -8	# Increse the stack size counter register 
         j readFile
 
     storeIndex:
-        move    $s5, $t1      #$s5 stores the index of the stack (dict) that contains de word that I want
-        j 	readFile
+        sub	$s5, $zero, $t1      #$s5 stores the index of the stack (dict) that contains de word that I want
+        li	$t9, 1
+        j	readFile
         
 	
     printDict:
@@ -140,10 +139,10 @@
     	syscall
     	
     	# Print word
-    	la	$t2, 0($sp)
-    	li	$v0, 4
-    	move	$a0, $t2
-    	syscall
+    	#la	$t2, 0($sp)
+    	#li	$v0, 4
+    	#move	$a0, $t2
+    	#syscall
     	
     	addi	$sp, $sp, 8
     	addi	$t1, $t1, 8
