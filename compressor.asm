@@ -4,9 +4,8 @@
     successMessage:	.asciiz		"\n\nSuccess in opening the file!\n"
     cmpssngFinished: 	.asciiz 	"\n\nCompression is done!\n" 
     fileName:       	.space   	10 		# Reserve 10 bytes to filename be stored.
-    cmpssngMessage: 	.asciiz     	"\n\nCompression started...\n\n"
-    buffer_in:         	.space     	 4 		# Reserve 4 bytes (1 word) to be read from the file and stored in the buffer_in
-    compressedName:    	.space   	10 		# Reserve 10 bytes to filename be stored.
+    cmpssngMessage: 	.asciiz     	"\n\nStarting compression...\n\n"
+    buffer:         	.space     	 4 		# Reserve 4 bytes (1 word) to be read from the file and stored in the buffer
     writinginFile:	.asciiz 	"\nWriting file: "
 .text
     main:
@@ -109,10 +108,26 @@
     readFile:
         li      $v0, 14
         move    $a0, $s0
-        la      $a1, buffer_in
-        li      $a2, 1
+        la      $a1, buffer
+        li      $a2, 4
         syscall
-        lb   	$a3, 0($a1)		# $a3 is the argument to be used inside the other functions with the buffer_in adress
+        
+        move	$t9, $v0
+        
+        move	$a3, $zero
+    continueToByte4:
+        beq	$v0, 4, catchByte4
+    continueToByte3:
+        beq	$v0, 3, catchByte3
+    continueToByte2:
+        beq	$v0, 2, catchByte2
+    continueToByte1:
+        beq	$v0, 1, catchByte1
+        
+    Continue:
+        move	$v0, $t9
+        move	$t9, $zero
+	move	$t0, $zero
 
         seq	$t8, $v0, 0
         beq	$t8, 1, Finish
@@ -128,13 +143,40 @@
 
     searchDict:
         addi    $t1, $t1, -4
+        sub	$t1, $zero, $t1
+        sub	$t1, $zero, $t1
 
         add     $t3, $s4, $t1  # $t1 is the index of the stack
-        lb	$t4, 4($t3)
-        lb	$t5, 0($t3)
         
-        seq     $t0, $a3, $t4
-        seq	$t6, $s5, $t5
+        lb	$t4, 7($t3)
+        sll	$s2, $s2, 8
+        add	$s2, $s2, $t4
+        lb	$t4, 6($t3)
+        sll	$s2, $s2, 8
+        add	$s2, $s2, $t4
+        lb	$t4, 5($t3)
+        sll	$s2, $s2, 8
+        add	$s2, $s2, $t4
+        lb	$t4, 4($t3)
+        sll	$s2, $s2, 8
+        add	$s2, $s2, $t4
+        
+        
+        lb	$t4, 3($t3)
+        sll	$s3, $s3, 8
+        add	$s3, $s3, $t4
+        lb	$t4, 2($t3)
+        sll	$s3, $s3, 8
+        add	$s3, $s3, $t4
+        lb	$t4, 1($t3)
+        sll	$s3, $s3, 8
+        add	$s3, $s3, $t4
+        lb	$t4, 0($t3)
+        sll	$s3, $s3, 8
+        add	$s3, $s3, $t4
+        
+        seq     $t0, $a3, $s2
+        seq	$t6, $s5, $s3
         
         add	$t7, $t0, $t6
         
@@ -146,36 +188,39 @@
 
     pushbackDict:
         addi    $sp, $sp, -8
+        #bnez 	$s5, indexCorrection
+ 	
+    storeWords: 
         sw	$s5, 0($sp)
         sw	$a3, 4($sp)
         
 	# Write to written file
  	 li   	$v0, 15       # system call for write to file
  	 move 	$a0, $s1      # file descriptor 
- 	 la   	$a1, 0($sp)      # address of buffer_in from which to write 	 
- 	 li  	$a2, 1	    # hardcoded buffer_in length
+ 	 la  	$a1, 0($sp)      # address of buffer from which to write 	 
+ 	 li  	$a2, 4	    # hardcoded buffer length
  	 syscall	        # write to file
  	 
  	 li  	$v0, 15       # system call for write to file
  	 move 	$a0, $s1      # file descriptor 
- 	 la   	$a1, 4($sp)      # address of buffer_in from which to write 	 
- 	 li   	$a2, 1	    # hardcoded buffer_in length
+ 	 la   	$a1, 4($sp)      # address of buffer from which to write 	 
+ 	 li   	$a2, 4	    # hardcoded buffer length
  	 syscall	
  	 
  	 # Print that is writing in file
- 	 li	$v0, 4
- 	 la	$a0, writinginFile
- 	 syscall
+ 	 #li	$v0, 4
+ 	 #la	$a0, writinginFile
+ 	 #syscall
  	 
  	 # Print the index that was written in the file
- 	 li	$v0, 1
- 	 lb	$a0, 0($sp)
- 	 syscall
+ 	 #li	$v0, 1
+ 	 #lb	$a0, 0($sp)
+ 	 #syscall
  	 
  	 # Print the character that was written in the file
- 	 li	$v0, 11
- 	 lb	$a0, 4($sp)
- 	 syscall
+ 	 #li	$v0, 11
+ 	 #lb	$a0, 4($sp)
+ 	 #syscall
 
         
         move	$s5, $zero
@@ -185,6 +230,7 @@
         
     storeIndex:
         sub	$s5, $zero, $t1      #$s5 stores the index of the stack (dict) that contains de word that I want
+        add	$s5, $s5, -4
         
         j	readFile
         
@@ -210,4 +256,31 @@
     	jr 	$ra
     	
 	
+    indexCorrection:
+    	add	$s5, $s5, -4
+    	j	storeWords
     	
+    catchByte4:
+        lb   	$t0, 3($a1)
+        sll	$a3, $a3, 8
+        add	$a3, $a3, $t0
+        add	$v0, $v0, -1
+        j	continueToByte3
+    catchByte3:
+        lb   	$t0, 2($a1)
+        sll	$a3, $a3, 8
+        add	$a3, $a3, $t0
+        add	$v0, $v0, -1
+        j	continueToByte2
+    catchByte2:
+        lb   	$t0, 1($a1)
+        sll	$a3, $a3, 8
+        add	$a3, $a3, $t0
+        add	$v0, $v0, -1
+        j	continueToByte1
+    catchByte1:
+        lb   	$t0, 0($a1)
+        sll	$a3, $a3, 8
+        add	$a3, $a3, $t0
+        add	$v0, $v0, -1
+	j	Continue
